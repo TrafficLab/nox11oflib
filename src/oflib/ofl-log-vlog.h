@@ -1,0 +1,22 @@
+#ifndef OFL_LOG_VLOG_H
+#define OFL_LOG_VLOG_H
+
+#include "vlog.h"
+
+#define VLOG_NAME(NAME) VLM_##NAME
+
+#define OFL_LOG_INIT(MODULE)
+
+#define OFL_LOG_DBG(MODULE, ...) \
+    VLOG_DBG(VLOG_NAME(MODULE), __VA_ARGS__)
+
+#define OFL_LOG_WARN(MODULE, ...) \
+    VLOG_WARN(VLOG_NAME(MODULE), __VA_ARGS__)
+
+#define OFL_LOG_IS_DBG_ENABLED(MODULE) \
+    VLOG_IS_DBG_ENABLED(VLOG_NAME(MODULE))
+
+#define OFL_LOG_IS_WARN_ENABLED(MODULE) \
+        VLOG_IS_WARN_ENABLED(VLOG_NAME(MODULE))
+
+#endif /* OFL_LOG_VLOG_H */
