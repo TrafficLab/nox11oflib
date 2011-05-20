@@ -97,7 +97,7 @@ int Pcapreader::do_send_openflow(const ofp_header* oh)
 {
     if (oh->type == OFPT_FEATURES_REQUEST) {
         log.dbg("received features request packet\n");
-        size_t size = sizeof(ofp_switch_features) + sizeof(ofp_phy_port);
+        size_t size = sizeof(ofp_switch_features) + sizeof(ofp_port);
         std::auto_ptr<Buffer> b(new Array_buffer(size));
         ofp_switch_features* osf = &b->at<ofp_switch_features>(0);
         memset(osf, 0, size);
