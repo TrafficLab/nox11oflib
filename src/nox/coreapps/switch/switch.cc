@@ -163,25 +163,28 @@ Switch::handle(const Event& e)
     if (setup_flows && out_port != -1) {
 
         struct ofl_match_standard match;
-        match.header.type = OFPMT_STANDARD;
-        match.wildcards = OFPFW_ALL;
-        match.in_port = flow.in_port;
-        match.dl_vlan = flow.dl_vlan;
-        match.dl_vlan_pcp = flow.dl_vlan_pcp;
-        memcpy(match.dl_src, flow.dl_src.octet, 6);
-        memset(match.dl_src_mask, 0xff, 6);
-        memcpy(match.dl_dst, flow.dl_dst.octet, 6);
-        memset(match.dl_dst_mask, 0xff, 6);
-        match.wildcards = 0x00;
-        match.dl_type = flow.dl_type;
-        match.nw_src = flow.nw_src;
-        match.nw_src_mask = 0xffffffff;
-        match.nw_dst = flow.nw_dst;
-        match.nw_dst_mask = 0xffffffff;
-        match.nw_proto = flow.nw_proto;
-        match.nw_tos = flow.nw_tos;
-        match.tp_src = flow.tp_src;
-        match.tp_dst = flow.tp_dst;
+        match.header.type   = OFPMT_STANDARD;
+        match.in_port       = flow.in_port;
+        match.wildcards     = OFPFW_MPLS_LABEL | OFPFW_MPLS_TC;
+        memcpy(match.dl_src,      flow.dl_src.octet, 6);
+        memset(match.dl_src_mask, 0x00, 6);
+        memcpy(match.dl_dst,      flow.dl_dst.octet, 6);
+        memset(match.dl_dst_mask, 0x00, 6);
+        match.dl_vlan       = flow.dl_vlan;
+        match.dl_vlan_pcp   = flow.dl_vlan_pcp;
+        match.dl_type       = ntohs(flow.dl_type);
+        match.nw_tos        = flow.nw_tos;
+        match.nw_proto      = flow.nw_proto;
+        match.nw_src        = flow.nw_src;
+        match.nw_src_mask   = 0x00000000;
+        match.nw_dst        = flow.nw_dst;
+        match.nw_dst_mask   = 0x00000000;
+        match.tp_src        = flow.tp_src;
+        match.tp_dst        = flow.tp_dst;
+        match.mpls_label    = 0x00000000;
+        match.mpls_tc       = 0x00;
+        match.metadata      = 0x0000000000000000ULL;
+        match.metadata_mask = 0xffffffffffffffffULL;
 
         struct ofl_action_output output =
                 {{/*.type = */OFPAT_OUTPUT}, /*.port = */out_port, /*.max_len = */0};
@@ -220,7 +223,7 @@ Switch::handle(const Event& e)
             if (in->total_len != in->data_length) {
                 /* Control path didn't buffer the packet and didn't send us
                  * the whole thing--what gives? */
-                VLOG_DBG(log, "total_len=%zu data_len=%zu\n",
+                VLOG_DBG(log, "total_len=%"PRIu16" data_len=%zu\n",
                         in->total_len, in->data_length);
                 return CONTINUE;
             }
