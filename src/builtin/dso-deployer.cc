@@ -226,7 +226,7 @@ DSO_component_context::load() {
     /* A little extra check for libtool build directory */
     if (!handle) {
         handle = 
-            open_library((home_path + ".libs/" + library).c_str(), &error_msg);
+            open_library((home_path + "/.libs/" + library).c_str(), &error_msg);
         error = "'" + error + "' or '"+demangle_undefined_symbol(error_msg)+"'";
     }
 
