@@ -220,7 +220,7 @@ DSO_component_context::describe() {
 void 
 DSO_component_context::load() {
     const char* error_msg;
-    handle = open_library((home_path + library).c_str(), &error_msg);
+    handle = open_library((home_path + "/" + library).c_str(), &error_msg);
     string error(demangle_undefined_symbol(error_msg));
 
     /* A little extra check for libtool build directory */
