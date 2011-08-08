@@ -1,23 +1,60 @@
-NOX Network Control Platform
------------------------------------
-Copyright (C) 2008-2009 Nicira Networks
-Copyright (C) 2009-2010 Stanford University
-Copyright (C) 2009-2010 International Computer Science Institute, UC Berkeley 
-Copyright (C) 2011      Ericsson Research
+NOX 1.1 Oflib
+-------------
 
-Welcome to the NOX network control platform.   This distribution
-includes all the software you need to build, install, and deploy NOX in
-your network, as well as source code and tools to allow you to develop
-your own NOX applications.
+This is an OpenFlow 1.1 [1] compatible version of the NOX controller.
+The code is based on Nicira's NOX Zaku controller [2], with
+OpenFlow proecessing being replaced with Oflib from the OpenFlow 1.1 Software
+Switch [3]. The controller only supports C++ applications (no Python).
 
-This version of NOX is a developers' release.  It is intended to provide
-a programmatic platform for controlling one or more OpenFlow switches.
-NOX can be extended both in C++ or Python and provides an abstracted
-interface to OpenFlow.  This distribution contains a set of example
-applications and some built in libraries which provide useful network
-functions such as host tracking and routing.
+[1] http://www.openflow.org/documents/openflow-spec-v1.1.0.pdf
+[2] http://noxrepo.org/cgi-bin/gitweb.cgi?p=nox;a=tree;h=8479a2d595e960d0953c4517b3a54be8fbc316b6;hb=8479a2d595e960d0953c4517b3a54be8fbc316b6
+[3] https://github.com/TrafficLab/of11softswitch
 
-*Note*
 
-NOX relies on OpenFlow as the communication protocol for controlling
-switches.
+Getting Started
+---------------
+
+To build, run the following commands in the of11softswitch directory:
+
+    ./boot.sh
+    mkdir build
+    ../configure
+    make
+
+
+To start the controller, run the following commands:
+
+    cd build
+    ./nox-core -i ptcp:<port> [applications]
+
+This will start the controller, listening on the given port for switch
+connetions. For a complete list of options, use the --help argument.
+
+
+Contribute
+----------
+
+Please submit your bug reports, fixes and suggestions as pull requests on
+github, or by contacting us directly.
+
+
+License
+-------
+
+NOX code is released under the GNU General Public license.
+Oflib itself is released under the BSD license.
+
+
+References
+----------
+
+[1] OpenFlow: http://www.openflow.org/
+[2] ONF:      http://www.opennetworkingfoundation.org/
+
+
+Contact
+-------
+
+E-mail: Zoltan Lajos Kis (zoltan.lajos.kis@ericsson.com)  
+
+Repo:   https://github.com/TrafficLab/nox11oflib
