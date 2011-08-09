@@ -24,7 +24,7 @@ To build, run the following commands in the of11softswitch directory:
 
 To start the controller, run the following commands:
 
-    cd build
+    cd build/src
     ./nox-core -i ptcp:<port> [applications]
 
 This will start the controller, listening on the given port for switch
