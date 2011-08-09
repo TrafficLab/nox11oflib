@@ -160,4 +160,12 @@ struct hash<vigil::datapathid> {
 };
 EXIT_HASH_NAMESPACE
 
+inline
+std::ostream&
+operator <<(std::ostream &os, const vigil::datapathid& dpid) {
+    os << dpid.string();
+    return os;
+}
+
+
 #endif  // -- DATAPATHID_HH
