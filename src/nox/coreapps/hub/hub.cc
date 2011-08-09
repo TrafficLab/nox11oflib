@@ -132,7 +132,7 @@ public:
 
     void install()
     {
-        register_handler("Packet_in_event", boost::bind(&Hub::handler, this, _1));
+        register_handler(Ofp_msg_event::get_name(OFPT_PACKET_IN), boost::bind(&Hub::handler, this, _1));
     }
 };
 

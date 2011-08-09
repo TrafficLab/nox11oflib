@@ -38,6 +38,9 @@ public:
     const boost::shared_ptr<Ofp_msg> msg;
 
     static Ofp_msg_event *create_event(datapathid dpid, uint32_t xid, boost::shared_ptr<Ofp_msg> msg);
+
+    static std::string get_name(enum ofp_type type);
+    static std::string get_stats_name(enum ofp_stats_types type);
 protected:
     Ofp_msg_event(std::string name, datapathid _dpid, uint32_t _xid, boost::shared_ptr<Ofp_msg> _msg) :
         Event(name), dpid(_dpid), xid(_xid), msg(_msg) { };

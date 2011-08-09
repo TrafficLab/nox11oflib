@@ -114,7 +114,7 @@ Switch::configure(const Configuration* conf) {
         }
     }
     
-    register_handler("Packet_in_event", boost::bind(&Switch::handle, this, _1));
+    register_handler(Ofp_msg_event::get_name(OFPT_PACKET_IN), boost::bind(&Switch::handle, this, _1));
 }
 
 void

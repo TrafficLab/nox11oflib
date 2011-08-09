@@ -69,10 +69,10 @@ Discovery::configure(const Configuration* c) {
 
 void
 Discovery::install() {
-    register_handler("Datapath_join_event", boost::bind(&Discovery::dp_join_handler, this, _1));
-    register_handler("Datapath_leave_event", boost::bind(&Discovery::dp_leave_handler, this, _1));
-    register_handler("Port_status_event", boost::bind(&Discovery::port_status_handler, this, _1));
-    register_handler("Packet_in_event", boost::bind(&Discovery::packet_in_handler, this, _1));
+    register_handler(Datapath_join_event::static_get_name(), boost::bind(&Discovery::dp_join_handler, this, _1));
+    register_handler(Datapath_leave_event::static_get_name(), boost::bind(&Discovery::dp_leave_handler, this, _1));
+    register_handler(Ofp_msg_event::get_name(OFPT_PORT_STATUS), boost::bind(&Discovery::port_status_handler, this, _1));
+    register_handler(Ofp_msg_event::get_name(OFPT_PACKET_IN), boost::bind(&Discovery::packet_in_handler, this, _1));
 
     post(boost::bind(&Discovery::send_lldp, this));
     post(boost::bind(&Discovery::timeout_links, this));
