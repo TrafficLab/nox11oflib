@@ -69,26 +69,26 @@ EventDispatcherComponent::EventDispatcherComponent(const Context* c,
     register_event<Shutdown_event>();
     register_event<Bootstrap_complete_event>();
 
-    register_event(std::string("Hello_event"));
-    register_event(std::string("Error_event"));
-    register_event(std::string("Echo_request_event"));
-    register_event(std::string("Echo_reply_event"));
-    register_event(std::string("Experimenter_event"));
-    register_event(std::string("Features_reply_event"));
-    register_event(std::string("Get_config_reply_event"));
-    register_event(std::string("Packet_in_event"));
-    register_event(std::string("Flow_removed_event"));
-    register_event(std::string("Port_status_event"));
-    register_event(std::string("Desc_stats_in_event"));
-    register_event(std::string("Flow_stats_in_event"));
-    register_event(std::string("Aggregate_stats_in_event"));
-    register_event(std::string("Table_stats_in_event"));
-    register_event(std::string("Port_stats_in_event"));
-    register_event(std::string("Queue_stats_in_event"));
-    register_event(std::string("Group_stats_in_event"));
-    register_event(std::string("Group_desc_stats_in_event"));
-    register_event(std::string("Barrier_reply_event"));
-    register_event(std::string("Queue_get_config_reply_event"));
+    register_event(Ofp_msg_event::get_name(OFPT_HELLO));
+    register_event(Ofp_msg_event::get_name(OFPT_ERROR));
+    register_event(Ofp_msg_event::get_name(OFPT_ECHO_REQUEST));
+    register_event(Ofp_msg_event::get_name(OFPT_ECHO_REPLY));
+    register_event(Ofp_msg_event::get_name(OFPT_EXPERIMENTER));
+    register_event(Ofp_msg_event::get_name(OFPT_FEATURES_REPLY));
+    register_event(Ofp_msg_event::get_name(OFPT_GET_CONFIG_REPLY));
+    register_event(Ofp_msg_event::get_name(OFPT_PACKET_IN));
+    register_event(Ofp_msg_event::get_name(OFPT_FLOW_REMOVED));
+    register_event(Ofp_msg_event::get_name(OFPT_PORT_STATUS));
+    register_event(Ofp_msg_event::get_stats_name(OFPST_DESC));
+    register_event(Ofp_msg_event::get_stats_name(OFPST_FLOW));
+    register_event(Ofp_msg_event::get_stats_name(OFPST_AGGREGATE));
+    register_event(Ofp_msg_event::get_stats_name(OFPST_TABLE));
+    register_event(Ofp_msg_event::get_stats_name(OFPST_PORT));
+    register_event(Ofp_msg_event::get_stats_name(OFPST_QUEUE));
+    register_event(Ofp_msg_event::get_stats_name(OFPST_GROUP));
+    register_event(Ofp_msg_event::get_stats_name(OFPST_GROUP_DESC));
+    register_event(Ofp_msg_event::get_name(OFPT_BARRIER_REPLY));
+    register_event(Ofp_msg_event::get_name(OFPT_QUEUE_GET_CONFIG_REPLY));
 
 }
 
