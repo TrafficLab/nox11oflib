@@ -734,6 +734,7 @@ void Handshake_fsm::register_switch() {
     memset(match.dl_dst_mask, 0xff, 6);
     match.nw_src_mask = 0xffffffff;
     match.nw_dst_mask = 0xffffffff;
+    match.metadata_mask = 0xffffffffffffffffULL;
 
     struct ofl_msg_flow_mod mod;
     mod.header.type = OFPT_FLOW_MOD;
