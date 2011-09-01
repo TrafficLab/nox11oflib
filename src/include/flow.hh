@@ -18,114 +18,46 @@
 #ifndef FLOW_HH
 #define FLOW_HH 1
 
-#define IP_ADDR_LEN 4
-
 #include <cstring>
 #include <iosfwd>
 #include "netinet++/ethernetaddr.hh"
 #include "openflow/openflow.h"
 //#include "openflow-pack-raw.hh"
 
+#include "../oflib/ofl-structs.h"
+
 namespace vigil {
 
 class Buffer;
 
-struct Flow {
-  /** Input switch port. 
-   */
-  uint32_t in_port;
-  /** Input VLAN. 
-   */
-  uint16_t dl_vlan;      
-  /** Input VLAN priority. 
-   */ 
-  uint8_t dl_vlan_pcp;   
-  /** Ethernet source address. 
-   */
-  ethernetaddr dl_src;    
-  /** Ethernet destination address. 
-   */
-  ethernetaddr dl_dst;    
-  /** Ethernet frame type. 
-   */
-  uint16_t dl_type;     
-  /** IP source address. 
-   */
-  uint32_t nw_src;     
-  /** IP destination address. 
-   */   
-  uint32_t nw_dst;   
-  /** IP protocol. 
-   */
-  uint8_t nw_proto;
-  /** IP ToS (actually DSCP field, 6 bits). 
-   */  
-  uint8_t nw_tos;
-  /** TCP/UDP source port. 
-   */
-  uint16_t tp_src;        
-  /** TCP/UDP destination port. 
-   */
-  uint16_t tp_dst;        
-
-  uint32_t mpls_label;
-  uint8_t  mpls_tc;
-
-  /** Cookie value
-   */
-  uint64_t cookie;
-
+class Flow {
+public:
+	struct ofl_match_standard match;
 
   /** Empty constructor
    */
-  Flow() :
-    in_port(0), dl_vlan(0), dl_vlan_pcp(0), 
-    dl_src(), dl_dst(), dl_type(0),
-    nw_src(0), nw_dst(0), 
-    nw_proto(0), nw_tos(0),
-    tp_src(0), tp_dst(0),
-    mpls_label(0), mpls_tc(0), cookie(0) { }
+  Flow();
   /** Copy constructor
    */
-  Flow(const Flow& flow_, uint64_t cookie_=0);
+  Flow(const Flow& flow_);
   /** Constructor from packet
    */
-  Flow(uint32_t in_port_, const Buffer&, uint64_t cookie_=0);
+  Flow(uint32_t in_port_, const Buffer&, uint64_t metadata_=0);
   /** Constructor from ofp_match
    */
-  Flow(const ofp_match& match, uint64_t cookie_=0);
-  /** Constructor from ofp_match
-   */
-  Flow(const ofp_match* match, uint64_t cookie_=0);
-  /** Detail constructor
-   */
-  Flow(uint32_t in_port_, uint16_t dl_vlan_, uint8_t dl_vlan_pcp_,
-       ethernetaddr dl_src_, ethernetaddr dl_dst_, uint16_t dl_type_, 
-       uint32_t nw_src_, uint32_t nw_dst_, uint8_t nw_proto_,
-       uint16_t tp_src_, uint16_t tp_dst_, uint8_t nw_tos_,
-       uint32_t mpls_label_, uint8_t mpls_tc_, uint64_t cookie_=0) :
-    in_port(in_port_), dl_vlan(dl_vlan_), dl_vlan_pcp(dl_vlan_pcp_), 
-    dl_src(dl_src_), dl_dst(dl_dst_), dl_type(dl_type_),
-    nw_src(nw_src_), nw_dst(nw_dst_), 
-    nw_proto(nw_proto_), nw_tos(nw_tos_),
-    tp_src(tp_src_), tp_dst(tp_dst_),
-    mpls_label(mpls_label_), mpls_tc(mpls_tc_),
-    cookie(cookie_) { }
+  Flow(const struct ofl_match_standard *match_);
+
   /** Compare function
    */
   static bool matches(const Flow&, const Flow&);
   /** \brief String representation
    */
   const std::string to_string() const;
-  /** \brief Return of_match that is exact match to flow in host order
-   *
-   * @return of_match with exact match
-   */
-  const ofp_match get_exact_match() const;
   /** \brief Return hash code
    */
   uint64_t hash_code() const;
-  
+private:
+  void init();
 };
 bool operator==(const Flow& lhs, const Flow& rhs);
 bool operator!=(const Flow& lhs, const Flow& rhs);

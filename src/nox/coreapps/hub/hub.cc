@@ -56,35 +56,9 @@ public:
         Flow flow(in->in_port, (Array_buffer(in->data, in->data_length)));
 
         /* drop all LLDP packets */
-        if (flow.dl_type == ethernet::LLDP){
+        if (flow.match.dl_type == ethernet::LLDP){
             return CONTINUE;
         }
-
-        //NOTE: Flow is in n.b.o.
-        struct ofl_match_standard match;
-        match.header.type = OFPMT_STANDARD;
-        match.in_port = flow.in_port;
-        match.wildcards = 0x00000000;
-        memcpy(match.dl_src, flow.dl_src.octet, 6);
-        memset(match.dl_src_mask, 0x00, 6);
-        memcpy(match.dl_dst, flow.dl_dst.octet, 6);
-        memset(match.dl_dst_mask, 0x00, 6);
-        match.dl_vlan = ntohs(flow.dl_vlan);
-        match.dl_vlan_pcp = flow.dl_vlan_pcp;
-        match.dl_type = ntohs(flow.dl_type);
-        match.nw_tos = flow.nw_tos;
-        match.nw_proto = ntohs(flow.nw_proto);
-        match.nw_src = flow.nw_src;
-        match.nw_src_mask = 0x00000000;
-        match.nw_dst = flow.nw_dst;
-        match.nw_dst_mask = 0x00000000;
-        match.tp_src = ntohs(flow.tp_src);
-        match.tp_dst = ntohs(flow.tp_dst);
-        match.mpls_label = ntohl(flow.mpls_label);
-        match.mpls_tc = flow.mpls_tc;
-        match.metadata = 0x00ULL;
-        match.metadata_mask = 0x00ULL;
-
 
         struct ofl_action_output output =
                 {{/*.type = */OFPAT_OUTPUT}, /*.port = */OFPP_FLOOD, /*.max_len = */0};
@@ -111,7 +85,7 @@ public:
                  /*.out_port = */OFPP_ANY,
                  /*.out_group = */OFPG_ANY,
                  /*.flags = */0x0000,
-                 /*.match = */(struct ofl_match_header *)&match,
+                 /*.match = */(struct ofl_match_header *)&flow.match,
                  /*.instructions_num = */1,
                  /*.instructions = */insts};
 

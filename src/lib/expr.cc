@@ -40,39 +40,39 @@ get_field<Packet_expr, Flow>(uint32_t field, const Flow& flow,
 
     switch (field) {
     case Packet_expr::AP_SRC:
-        value = flow.in_port;
+        value = flow.match.in_port;
         return true;
     case Packet_expr::AP_DST:
         assert(0);
     case Packet_expr::DL_VLAN:
-        value = flow.dl_vlan;
+        value = flow.match.dl_vlan;
         return true;
     case Packet_expr::DL_VLAN_PCP:
-        value = flow.dl_vlan_pcp;
+        value = flow.match.dl_vlan_pcp;
         return true;
     case Packet_expr::DL_TYPE:
-        value = flow.dl_type;
+        value = flow.match.dl_type;
         return true;
     case Packet_expr::DL_SRC:
-        memcpy(&value, flow.dl_src.octet + 2, sizeof value);
+        memcpy(&value, flow.match.dl_src + 2, sizeof value);
         return true;
     case Packet_expr::DL_DST:
-        memcpy(&value, flow.dl_dst.octet + 2, sizeof value);
+        memcpy(&value, flow.match.dl_dst + 2, sizeof value);
         return true;
     case Packet_expr::NW_SRC:
-        value = flow.nw_src;
+        value = flow.match.nw_src;
         return true;
     case Packet_expr::NW_DST:
-        value = flow.nw_dst;
+        value = flow.match.nw_dst;
         return true;
     case Packet_expr::NW_PROTO:
-        value = flow.nw_proto;
+        value = flow.match.nw_proto;
         return true;
     case Packet_expr::TP_SRC:
-        value = flow.tp_src;
+        value = flow.match.tp_src;
         return true;
     case Packet_expr::TP_DST:
-        value = flow.tp_dst;
+        value = flow.match.tp_dst;
         return true;
     }
     log.warn("unretrievable field %u", field);
@@ -222,27 +222,27 @@ matches(uint32_t rule_id, const Packet_expr& expr, const Flow& flow)
                              | Cnode<Packet_expr, void*>::MASKS[Packet_expr::GROUP_DST])));
 
     return (((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::AP_SRC])
-             || expr.ap_src == flow.in_port)
+             || expr.ap_src == flow.match.in_port)
             && ((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::DL_VLAN])
-                || expr.dl_vlan == flow.dl_vlan)
+                || expr.dl_vlan == flow.match.dl_vlan)
             && ((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::DL_VLAN_PCP])
-                || expr.dl_vlan_pcp == flow.dl_vlan_pcp)
+                || expr.dl_vlan_pcp == flow.match.dl_vlan_pcp)
             && ((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::DL_TYPE])
-                || expr.dl_proto == flow.dl_type)
+                || expr.dl_proto == flow.match.dl_type)
             && ((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::DL_SRC])
-                || memcmp(expr.dl_src, flow.dl_src.octet, sizeof expr.dl_src) == 0)
+                || memcmp(expr.dl_src, flow.match.dl_src, sizeof expr.dl_src) == 0)
             && ((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::DL_DST])
-                || memcmp(expr.dl_dst, flow.dl_dst.octet, sizeof expr.dl_dst) == 0)
+                || memcmp(expr.dl_dst, flow.match.dl_dst, sizeof expr.dl_dst) == 0)
             && ((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::NW_SRC])
-                || expr.nw_src == flow.nw_src)
+                || expr.nw_src == flow.match.nw_src)
             && ((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::NW_DST])
-                || expr.nw_dst == flow.nw_dst)
+                || expr.nw_dst == flow.match.nw_dst)
             && ((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::NW_PROTO])
-                || expr.nw_proto == flow.nw_proto)
+                || expr.nw_proto == flow.match.nw_proto)
             && ((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::TP_SRC])
-                || expr.tp_src == flow.tp_src)
+                || expr.tp_src == flow.match.tp_src)
             && ((expr.wildcards & Cnode<Packet_expr, void*>::MASKS[Packet_expr::TP_DST])
-                || expr.tp_dst == flow.tp_dst));
+                || expr.tp_dst == flow.match.tp_dst));
 }
 
 template <>

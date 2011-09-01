@@ -35,9 +35,13 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <inttypes.h>
 #include <boost/static_assert.hpp>
 
 #define ETH_ADDR_LEN           6
+
+static const uint8_t eth_addr_broadcast[ETH_ADDR_LEN]
+    = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 static inline bool eth_addr_is_broadcast(const uint8_t ea[6])
 {
@@ -79,14 +83,32 @@ static inline void eth_addr_from_uint64(uint64_t x, uint8_t ea[ETH_ADDR_LEN])
     ea[5] = x;
 }
 
+
+/* Returns true if 'ea' is a reserved multicast address, that a bridge must
+ * never forward, false otherwise. */
+static inline bool eth_addr_is_reserved(const uint8_t ea[ETH_ADDR_LEN])
+{
+    return (ea[0] == 0x01
+            && ea[1] == 0x80
+            && ea[2] == 0xc2
+            && ea[3] == 0x00
+            && ea[4] == 0x00
+            && (ea[5] & 0xf0) == 0x00);
+}
+
 #define ETH_ADDR_FMT                                                    \
     "%02"PRIx8":%02"PRIx8":%02"PRIx8":%02"PRIx8":%02"PRIx8":%02"PRIx8
 #define ETH_ADDR_ARGS(ea)                                   \
     (ea)[0], (ea)[1], (ea)[2], (ea)[3], (ea)[4], (ea)[5]
 
+
+#define ETH_TYPE_II_START      0x0600
 #define ETH_TYPE_IP            0x0800
 #define ETH_TYPE_ARP           0x0806
 #define ETH_TYPE_VLAN          0x8100
+#define ETH_TYPE_VLAN_PBB      0x88a8
+#define ETH_TYPE_MPLS          0x8847
+#define ETH_TYPE_MPLS_MCAST    0x8848
 
 #define ETH_HEADER_LEN 14
 #define ETH_PAYLOAD_MIN 46
@@ -129,13 +151,18 @@ struct llc_snap_header {
 } __attribute__((packed));
 BOOST_STATIC_ASSERT(LLC_SNAP_HEADER_LEN == sizeof(struct llc_snap_header));
 
-#define VLAN_VID 0x0fff
+#define VLAN_VID_MASK 0x0fff
+#define VLAN_VID_SHIFT 0
 #define VLAN_PCP_MASK 0xe000
 #define VLAN_PCP_SHIFT 13
+#define VLAN_PCP_BITMASK 0x0007 /* the least 3-bit is valid */
+
+#define VLAN_VID_MAX 4095
+#define VLAN_PCP_MAX 7
 
 #define VLAN_HEADER_LEN 4
 struct vlan_header {
-    uint16_t vlan_tci;          /* Lowest 12 bits are VLAN ID; upper 3 PCP. */
+    uint16_t vlan_tci;          /* Lowest 12 bits are VLAN ID. */
     uint16_t vlan_next_type;
 };
 BOOST_STATIC_ASSERT(VLAN_HEADER_LEN == sizeof(struct vlan_header));
@@ -150,9 +177,13 @@ struct vlan_eth_header {
 } __attribute__((packed));
 BOOST_STATIC_ASSERT(VLAN_ETH_HEADER_LEN == sizeof(struct vlan_eth_header));
 
+/* The "(void) (ip)[0]" below has no effect on the value, since it's the first
+ * argument of a comma expression, but it makes sure that 'ip' is a pointer.
+ * This is useful since a common mistake is to pass an integer instead of a
+ * pointer to IP_ARGS. */
 #define IP_FMT "%"PRIu8".%"PRIu8".%"PRIu8".%"PRIu8
 #define IP_ARGS(ip)                             \
-        ((uint8_t *) ip)[0],                    \
+        ((void) (ip)[0], ((uint8_t *) ip)[0]),  \
         ((uint8_t *) ip)[1],                    \
         ((uint8_t *) ip)[2],                    \
         ((uint8_t *) ip)[3]
@@ -161,8 +192,15 @@ BOOST_STATIC_ASSERT(VLAN_ETH_HEADER_LEN == sizeof(struct vlan_eth_header));
 #define IP_IHL(ip_ihl_ver) ((ip_ihl_ver) & 15)
 #define IP_IHL_VER(ihl, ver) (((ver) << 4) | (ihl))
 
-#define IP_TYPE_TCP 6
-#define IP_TYPE_UDP 17
+/* TOS fields. */
+#define IP_ECN_MASK 0x03
+#define IP_DSCP_MASK 0xfc
+
+
+#define IP_TYPE_ICMP   1
+#define IP_TYPE_TCP    6
+#define IP_TYPE_UDP   17
+#define IP_TYPE_SCTP 132
 
 #define IP_VERSION 4
 
@@ -170,7 +208,9 @@ BOOST_STATIC_ASSERT(VLAN_ETH_HEADER_LEN == sizeof(struct vlan_eth_header));
 #define IP_MORE_FRAGMENTS 0x2000 /* More fragments. */
 #define IP_FRAG_OFF_MASK  0x1fff /* Fragment offset. */
 #define IP_IS_FRAGMENT(ip_frag_off) \
-        (((ip_frag_off) & htons(IP_MORE_FRAGMENTS | IP_FRAG_OFF_MASK)) != 0)
+        ((ip_frag_off) & htons(IP_MORE_FRAGMENTS | IP_FRAG_OFF_MASK))
+
+#define IP_ADDR_LEN 4
 
 #define IP_HEADER_LEN 20
 struct ip_header {
@@ -187,6 +227,14 @@ struct ip_header {
 };
 BOOST_STATIC_ASSERT(IP_HEADER_LEN == sizeof(struct ip_header));
 
+#define ICMP_HEADER_LEN 4
+struct icmp_header {
+    uint8_t icmp_type;
+    uint8_t icmp_code;
+    uint16_t icmp_csum;
+};
+BOOST_STATIC_ASSERT(ICMP_HEADER_LEN == sizeof(struct icmp_header));
+
 #define UDP_HEADER_LEN 8
 struct udp_header {
     uint16_t udp_src;
@@ -195,14 +243,6 @@ struct udp_header {
     uint16_t udp_csum;
 };
 BOOST_STATIC_ASSERT(UDP_HEADER_LEN == sizeof(struct udp_header));
-
-#define ICMP_HEADER_LEN 4
-struct icmp_header {
-    uint8_t icmp_type;
-    uint8_t icmp_code;
-    uint16_t icmp_csum;
-};
-BOOST_STATIC_ASSERT(ICMP_HEADER_LEN == sizeof(struct icmp_header));
 
 #define TCP_FIN 0x01
 #define TCP_SYN 0x02
@@ -227,6 +267,15 @@ struct tcp_header {
 };
 BOOST_STATIC_ASSERT(TCP_HEADER_LEN == sizeof(struct tcp_header));
 
+#define SCTP_HEADER_LEN 12
+struct sctp_header {
+    uint16_t sctp_src;
+    uint16_t sctp_dst;
+    uint32_t sctp_verif;
+    uint32_t sctp_csum;
+};
+BOOST_STATIC_ASSERT(SCTP_HEADER_LEN == sizeof(struct sctp_header));
+
 #define ARP_HRD_ETHERNET 1
 #define ARP_PRO_IP 0x0800
 #define ARP_OP_REQUEST 1
@@ -248,5 +297,31 @@ struct arp_eth_header {
     uint32_t ar_tpa;           /* Target protocol address. */
 } __attribute__((packed));
 BOOST_STATIC_ASSERT(ARP_ETH_HEADER_LEN == sizeof(struct arp_eth_header));
+
+struct qtag_prefix {
+    uint16_t eth_type;      /* ETH_TYPE_VLAN */
+    uint16_t tci;
+};
+
+#define MPLS_LABEL_MAX   1048575
+#define MPLS_TC_MAX            7
+
+#define MPLS_HEADER_LEN 4
+struct mpls_header {
+    uint32_t fields;
+};
+
+#define MPLS_TTL_MASK 0x000000ff
+#define MPLS_TTL_SHIFT 0
+#define MPLS_S_MASK 0x00000100
+#define MPLS_S_SHIFT 8
+#define MPLS_TC_MASK 0x00000e00
+#define MPLS_TC_SHIFT 9
+#define MPLS_LABEL_MASK 0xfffff000
+#define MPLS_LABEL_SHIFT 12
+
+BOOST_STATIC_ASSERT(MPLS_HEADER_LEN == sizeof(struct mpls_header));
+
+
 
 #endif /* packets.h */

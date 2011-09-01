@@ -131,28 +131,30 @@ Switch::handle(const Event& e)
     Flow flow(in->in_port, (Nonowning_buffer(in->data, in->data_length)));
 
     /* drop all LLDP packets */
-    if (flow.dl_type == ethernet::LLDP){
+    if (flow.match.dl_type == ethernet::LLDP){
         return CONTINUE;
     }
 
     /* Learn the source. */
-    if (!flow.dl_src.is_multicast()) {
-        Mac_source src(pi.dpid, flow.dl_src);
+    ethernetaddr dl_src(flow.match.dl_src);
+    if (!dl_src.is_multicast()) {
+        Mac_source src(pi.dpid, dl_src);
         Source_table::iterator i = sources.insert(src).first;
         if (i->port != in->in_port) {
             i->port = in->in_port;
             VLOG_DBG(log, "learned that "EA_FMT" is on datapath %s port %d",
-                     EA_ARGS(&flow.dl_src), pi.dpid.string().c_str(),
+                     EA_ARGS(&dl_src), pi.dpid.string().c_str(),
                      (int) in->in_port);
         }
     } else {
-        VLOG_DBG(log, "multicast packet source "EA_FMT, EA_ARGS(&flow.dl_src));
+        VLOG_DBG(log, "multicast packet source "EA_FMT, EA_ARGS(&dl_src));
     }
 
     /* Figure out the destination. */
     int out_port = -1;        /* Flood by default. */
-    if (!flow.dl_dst.is_multicast()) {
-        Mac_source dst(pi.dpid, flow.dl_dst);
+    ethernetaddr dl_dst(flow.match.dl_dst);
+    if (!dl_dst.is_multicast()) {
+        Mac_source dst(pi.dpid, dl_dst);
         Source_table::iterator i(sources.find(dst));
         if (i != sources.end()) {
             out_port = i->port;
@@ -161,30 +163,6 @@ Switch::handle(const Event& e)
 
     /* Set up a flow if the output port is known. */
     if (setup_flows && out_port != -1) {
-
-        struct ofl_match_standard match;
-        match.header.type   = OFPMT_STANDARD;
-        match.in_port       = flow.in_port;
-        match.wildcards     = OFPFW_MPLS_LABEL | OFPFW_MPLS_TC;
-        memcpy(match.dl_src,      flow.dl_src.octet, 6);
-        memset(match.dl_src_mask, 0x00, 6);
-        memcpy(match.dl_dst,      flow.dl_dst.octet, 6);
-        memset(match.dl_dst_mask, 0x00, 6);
-        match.dl_vlan       = flow.dl_vlan;
-        match.dl_vlan_pcp   = flow.dl_vlan_pcp;
-        match.dl_type       = ntohs(flow.dl_type);
-        match.nw_tos        = flow.nw_tos;
-        match.nw_proto      = flow.nw_proto;
-        match.nw_src        = flow.nw_src;
-        match.nw_src_mask   = 0x00000000;
-        match.nw_dst        = flow.nw_dst;
-        match.nw_dst_mask   = 0x00000000;
-        match.tp_src        = flow.tp_src;
-        match.tp_dst        = flow.tp_dst;
-        match.mpls_label    = 0x00000000;
-        match.mpls_tc       = 0x00;
-        match.metadata      = 0x0000000000000000ULL;
-        match.metadata_mask = 0xffffffffffffffffULL;
 
         struct ofl_action_output output =
                 {{/*.type = */OFPAT_OUTPUT}, /*.port = */out_port, /*.max_len = */0};
@@ -209,7 +187,7 @@ Switch::handle(const Event& e)
         mod.idle_timeout = 5;
         mod.hard_timeout = OFP_FLOW_PERMANENT;
         mod.flags = ofd_flow_mod_flags();
-        mod.match = (struct ofl_match_header *)&match;
+        mod.match = (struct ofl_match_header *)&flow.match;
         mod.instructions_num = 1;
         mod.instructions = insts;
 
