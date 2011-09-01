@@ -47,7 +47,7 @@ Flow::Flow() {
 	init();
 }
 
-Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
+Flow::Flow(uint32_t in_port_, const Buffer& buffer) {
     size_t offset = 0;
     struct eth_header     *eth;
     struct snap_header    *eth_snap;
@@ -64,8 +64,6 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
 	init();
 
 	match.in_port = in_port_;
-	match.metadata = metadata_;
-
 
     /* Ethernet */
 
@@ -78,6 +76,10 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
 
     if (ntohs(eth->eth_type) >= ETH_TYPE_II_START) {
         /* Ethernet II */
+    	match.wildcards &= ~OFPFW_DL_TYPE;
+    	memset(&match.dl_src_mask, 0x00, ETH_ADDR_LEN);
+    	memset(&match.dl_dst_mask, 0x00, ETH_ADDR_LEN);
+
         memcpy(&match.dl_src, eth->eth_src, ETH_ADDR_LEN);
         memcpy(&match.dl_dst, eth->eth_dst, ETH_ADDR_LEN);
         match.dl_type = ntohs(eth->eth_type);
@@ -112,6 +114,10 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
             return;
         }
 
+    	match.wildcards &= ~OFPFW_DL_TYPE;
+    	memset(&match.dl_src_mask, 0x00, ETH_ADDR_LEN);
+    	memset(&match.dl_dst_mask, 0x00, ETH_ADDR_LEN);
+
         memcpy(&match.dl_src, eth->eth_src, ETH_ADDR_LEN);
         memcpy(&match.dl_dst, eth->eth_dst, ETH_ADDR_LEN);
         match.dl_type = ntohs(eth_snap->snap_type);
@@ -121,6 +127,10 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
 
     if (match.dl_type == ETH_TYPE_VLAN ||
     	match.dl_type == ETH_TYPE_VLAN_PBB) {
+
+    	match.wildcards &= ~OFPFW_DL_VLAN;
+    	match.wildcards &= ~OFPFW_DL_VLAN_PCP;
+
         if (buffer.size() < offset + sizeof(struct vlan_header)) {
             return;
         }
@@ -160,6 +170,9 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
         mpls = (struct mpls_header *)((uint8_t *)buffer.data() + offset);
         offset += sizeof(struct mpls_header);
 
+    	match.wildcards &= ~OFPFW_MPLS_LABEL;
+    	match.wildcards &= ~OFPFW_MPLS_TC;
+
         match.mpls_label = (ntohl(mpls->fields) & MPLS_LABEL_MASK) >> MPLS_LABEL_SHIFT;
         match.mpls_tc =    (ntohl(mpls->fields) & MPLS_TC_MASK) >> MPLS_TC_SHIFT;
 
@@ -182,10 +195,16 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
             arp->ar_pln == 4) {
 
             if (ntohs(arp->ar_op) <= 0xff) {
+
+            	match.wildcards &= ~OFPFW_NW_PROTO;
+
                 match.nw_proto = ntohs(arp->ar_op);
             }
             if (match.nw_proto == ARP_OP_REQUEST ||
                 match.nw_proto == ARP_OP_REPLY) {
+
+            	match.nw_src_mask = 0x00000000;
+            	match.nw_dst_mask = 0x00000000;
 
                 match.nw_src = arp->ar_spa;
                 match.nw_dst = arp->ar_tpa;
@@ -202,6 +221,11 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
         }
         ipv4 = (struct ip_header *)((uint8_t *)buffer.data() + offset);
         offset += sizeof(struct ip_header);
+
+    	match.wildcards &= ~OFPFW_NW_PROTO;
+    	match.wildcards &= ~OFPFW_NW_TOS;
+    	match.nw_src_mask = 0x00000000;
+    	match.nw_dst_mask = 0x00000000;
 
         match.nw_src =   ipv4->ip_src;
         match.nw_dst =   ipv4->ip_dst;
@@ -222,6 +246,9 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
             tcp = (struct tcp_header *)((uint8_t *)buffer.data() + offset);
             offset += sizeof(struct tcp_header);
 
+        	match.wildcards &= ~OFPFW_TP_SRC;
+        	match.wildcards &= ~OFPFW_TP_DST;
+
             match.tp_src = ntohs(tcp->tcp_src);
             match.tp_dst = ntohs(tcp->tcp_dst);
 
@@ -235,6 +262,9 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
             udp = (struct udp_header *)((uint8_t *)buffer.data() + offset);
             offset += sizeof(struct udp_header);
 
+        	match.wildcards &= ~OFPFW_TP_SRC;
+        	match.wildcards &= ~OFPFW_TP_DST;
+
             match.tp_src = ntohs(udp->udp_src);
             match.tp_dst = ntohs(udp->udp_dst);
 
@@ -247,6 +277,9 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
             icmp = (struct icmp_header *)((uint8_t *)buffer.data() + offset);
             offset += sizeof(struct icmp_header);
 
+        	match.wildcards &= ~OFPFW_TP_SRC;
+        	match.wildcards &= ~OFPFW_TP_DST;
+
             match.tp_src = icmp->icmp_type;
             match.tp_dst = icmp->icmp_code;
 
@@ -258,6 +291,9 @@ Flow::Flow(uint32_t in_port_, const Buffer& buffer, uint64_t metadata_) {
             }
             sctp = (struct sctp_header *)((uint8_t *)buffer.data() + offset);
             offset += sizeof(struct sctp_header);
+
+        	match.wildcards &= ~OFPFW_TP_SRC;
+        	match.wildcards &= ~OFPFW_TP_DST;
 
             match.tp_src = ntohs(sctp->sctp_src);
             match.tp_dst = ntohs(sctp->sctp_dst);
@@ -279,6 +315,11 @@ Flow::init() {
 	  memset(&match, 0x00, sizeof(struct ofl_match_standard));
 	  match.header.type = OFPMT_STANDARD;
 	  match.wildcards   = OFPFW_ALL;
+	  memset(&match.dl_src_mask, 0xff, ETH_ADDR_LEN);
+	  memset(&match.dl_dst_mask, 0xff, ETH_ADDR_LEN);
+	  match.nw_src_mask   = 0xffffffff;
+	  match.nw_dst_mask   = 0xffffffff;
+	  match.metadata_mask = 0xffffffffffffffffULL;
 }
 
 const std::string

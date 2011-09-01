@@ -42,7 +42,7 @@ public:
   Flow(const Flow& flow_);
   /** Constructor from packet
    */
-  Flow(uint32_t in_port_, const Buffer&, uint64_t metadata_=0);
+  Flow(uint32_t in_port_, const Buffer&);
   /** Constructor from ofp_match
    */
   Flow(const struct ofl_match_standard *match_);
