@@ -19,7 +19,6 @@
 #include "datapath-join.hh"
 #include "datapath-leave.hh"
 #include "ofp-msg-event.hh"
-#include "link-event.hh"
 
 #include "../../../oflib/ofl-structs.h"
 #include "../../../oflib/ofl-messages.h"
@@ -109,7 +108,7 @@ Discovery::port_status_handler(const Event& e) {
         if (status->reason == OFPPR_ADD) {
             port_add(Port(ome.dpid, status->desc->port_no));
         } else if (status->reason == OFPPR_DELETE) {
-            port_delete(Port(ome.dpid, status->desc->port_no));
+            port_delete(Port(ome.dpid, status->desc->port_no), Link_event::PORT);
         }
     }
 
@@ -168,7 +167,7 @@ Discovery::dp_remove(const datapathid& dpid) {
 
     while(iter != ports.end()) {
         if (iter->dpid == dpid) {
-            iter = port_delete(iter++);
+            iter = port_delete(iter++, Link_event::DP);
         } else {
             ++iter;
         }
@@ -198,12 +197,12 @@ Discovery::port_add(const Port& port) {
 }
 
 void
-Discovery::port_delete(const Port &port) {
+Discovery::port_delete(const Port &port, Link_event::Reason reason) {
     std::vector<Port>::iterator iter = ports.begin();
 
     while (iter != ports.end()) {
         if (*iter == port) {
-            port_delete(iter);
+            port_delete(iter, reason);
             return;
         }
         iter++;
@@ -211,12 +210,12 @@ Discovery::port_delete(const Port &port) {
 }
 
 std::vector<Port>::iterator
-Discovery::port_delete(std::vector<Port>::iterator iter) {
+Discovery::port_delete(std::vector<Port>::iterator iter, Link_event::Reason reason) {
     std::map<Link, uint64_t>::iterator liter = links.begin();
 
     while(liter != links.end()) {
         if (liter->first.sport == *iter || liter->first.dport == *iter) {
-                link_delete(liter++);
+                link_delete(liter++, reason);
         } else {
             ++liter;
         }
@@ -247,19 +246,19 @@ Discovery::link_add(const Link& link) {
 
     Link_event *event = new Link_event(link.sport.dpid, link.dport.dpid,
                                         link.sport.port, link.dport.port,
-                                        Link_event::ADD);
+                                        Link_event::ADD, Link_event::LINK);
 
     nox::post_event(event);
 
 }
 
 void
-Discovery::link_delete(const Link& link) {
+Discovery::link_delete(const Link& link, Link_event::Reason reason) {
     std::map<Link, uint64_t>::iterator iter = links.begin();
 
     while(iter != links.end()) {
         if (iter->first == link) {
-            link_delete(iter);
+            link_delete(iter, reason);
             return;
         }
         iter++;
@@ -267,10 +266,10 @@ Discovery::link_delete(const Link& link) {
 }
 
 void
-Discovery::link_delete(std::map<Link, uint64_t>::iterator iter) {
+Discovery::link_delete(std::map<Link, uint64_t>::iterator iter, Link_event::Reason reason) {
     Link_event *event = new Link_event(iter->first.sport.dpid, iter->first.dport.dpid,
                                        iter->first.sport.port, iter->first.dport.port,
-                                        Link_event::REMOVE);
+                                        Link_event::REMOVE, reason);
 
     lg.info("Deleting Link %"PRIx64"-%"PRIx32" -> %"PRIx64"-%"PRIx32"",
             iter->first.sport.dpid.as_host(), iter->first.sport.port,
@@ -304,7 +303,7 @@ Discovery::timeout_links() {
             lg.warn("Link Timed out %"PRIx64"-%"PRIx32" -> %"PRIx64"-%"PRIx32"",
                     iter->first.sport.dpid.as_host(), iter->first.sport.port,
                     iter->first.dport.dpid.as_host(), iter->first.dport.port);
-            link_delete(iter++);
+            link_delete(iter++, Link_event::LINK);
         } else {
             ++iter;
         }

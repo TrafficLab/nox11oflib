@@ -43,12 +43,15 @@ struct Link_event
         REMOVE
     };
 
+    enum Reason {
+    	LINK,  /* in case of REMOVE it means a link failure; always used for add */
+    	PORT,  /* in case of REMOVE it means a link is down because of a port */
+    	DP     /* in case of REMOVE it means the link is removed because of a dp leave */
+    };
+
     Link_event(datapathid dpsrc_, datapathid dpdst_,
                uint32_t sport_, uint32_t dport_,
-               Action action_);
-    
-    // -- only for use within python
-    Link_event();
+               Action action_, Reason reason_);
 
     static const Event_name static_get_name() {
         return "Link_event";
@@ -56,9 +59,10 @@ struct Link_event
 
     datapathid dpsrc;
     datapathid dpdst;
-    uint32_t sport;
-    uint32_t dport;
-    Action action;
+    uint32_t   sport;
+    uint32_t   dport;
+    Action     action;
+    Reason     reason;
 };
 
 } // namespace vigil

@@ -7,6 +7,7 @@
 #include <set>
 #include "component.hh"
 #include "timeval.hh"
+#include "link-event.hh"
 
 #include "../../../oflib/ofl-messages.h"
 
@@ -102,11 +103,11 @@ private:
     void dp_add(struct ofl_msg_features_reply *features);
     void dp_remove(const datapathid& dpid);
     void port_add(const Port& port);
-    void port_delete(const Port &port);
-    std::vector<Port>::iterator port_delete(std::vector<Port>::iterator iter);
+    void port_delete(const Port &port, Link_event::Reason reason);
+    std::vector<Port>::iterator port_delete(std::vector<Port>::iterator iter, Link_event::Reason reason);
     void link_add(const Link& link);
-    void link_delete(const Link& link);
-    void link_delete(std::map<Link, uint64_t>::iterator iter);
+    void link_delete(const Link& link, Link_event::Reason reason);
+    void link_delete(std::map<Link, uint64_t>::iterator iter, Link_event::Reason reason);
 
     void update_timeval();
     void timeout_links();

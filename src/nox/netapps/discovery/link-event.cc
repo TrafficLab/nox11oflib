@@ -27,14 +27,11 @@ using namespace vigil::container;
 namespace vigil {
     Link_event::Link_event(datapathid dpsrc_, datapathid dpdst_,
                uint32_t sport_, uint32_t dport_,
-               Action action_)
+               Action action_, Reason reason_)
         : Event(static_get_name()), dpsrc(dpsrc_), dpdst(dpdst_),
           sport(sport_), dport(dport_),
-          action(action_) { }
+          action(action_), reason(reason_) { }
     
-    // -- only for use within python
-    Link_event::Link_event() : Event(static_get_name()) { }
-
 } // namespace vigil
 
 namespace {
