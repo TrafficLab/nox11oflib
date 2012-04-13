@@ -302,7 +302,7 @@ ofl_msg_unpack_port_status(struct ofp_header *src, size_t *len, struct ofl_msg_h
     ss = (struct ofp_port_status *)src;
     ds = (struct ofl_msg_port_status *)malloc(sizeof(struct ofl_msg_port_status));
 
-    ds->reason = ss->reason;
+    ds->reason = (enum ofp_port_reason)(ss->reason);
 
     error = ofl_structs_port_unpack(&(ss->desc), len, &(ds->desc));
     if (error) {

@@ -21,6 +21,8 @@
 #include <inttypes.h>
 #include <string>
 #include <stdio.h>
+#include <istream>
+#include <ostream>
 
 #include "hash_map.hh" // hash fn defined at end of file
 #include "xtoxll.h"
